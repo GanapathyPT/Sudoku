@@ -4,25 +4,27 @@ import {
 	Grid,
 	Divider,
 	Typography,
-	IconButton
-}from "@material-ui/core";
+	IconButton,
+	Snackbar,
+	Button
+} from "@material-ui/core";
 
-import FavoriteIcon from '@material-ui/icons/Favorite';
+import Alert from "@material-ui/lab/Alert";
+
 import WbSunnyIcon from '@material-ui/icons/WbSunny';
 import Brightness3Icon from '@material-ui/icons/Brightness3';
 
-import { createRandomBoard } from "../gameLogics";
+import { createRandomBoard, getAllPossibilities, find } from "../gameLogics";
 
 export default function() {
 
 	const [gameCompleted, setGameCompleted] = useState(false);
 	const [solvedBoard, setSolvedBoard] = useState([]);
-	const [lives, setLives] = useState(5);
+	const [possibilities, setPossibilities] = useState([]);
 	const [selected, setSelected] = useState([0, 0]);
 	const [table, setTable] = useState([]);
-	const [timer, setTimer] = useState(null);
-	const [mobileInput, setMobileInput] = useState(null);
 	const [darkTheme, setDarkTheme] = useState(false);
+	const [alertMessage, setAlertMessage] = useState(false);
 
 	const theme = {
 		backgroundColor: darkTheme ? "black" : "white",
@@ -46,76 +48,43 @@ export default function() {
 	}
 
 	const select = (i, j) => {
-		const mi = document.getElementById('mobileInput');
-		mi.focus();
+		console.log("selected ", i ,j )
 		if (!gameCompleted)
 			setSelected([i, j]);
 	}
 
 	const handleKeyPress = e => {
-		if (gameCompleted)
-			return;
-
-		const key = +e.keyCode;
-
-		if ((key > 96 && key < 106) || (key > 48 && key < 58)){
-			if (!table[selected[0]][selected[1]]){
-				const number = key > 96 && key < 106 ? key - 96 : key - 48;
-				if (selected[0] !== null && selected[1] !== null){
-					const newTable = table.map(e => [...e]);
-					if (solvedBoard[selected[0]][selected[1]] === number)
-						newTable[selected[0]][selected[1]] = number;
-					else
-						setLives(l => l - 1);
-					
-					setTable(newTable);
-				}
-			}
+		let x,y;
+		switch(e.keyCode) {
+			case 37:
+				x = selected[1] - 1 < 0 ? selected[0] - 1 : selected[0];
+				y = selected[1] - 1 < 0 ? 8 : selected[1] - 1;
+				if (selected[0] === 0 && selected[1] === 0) 
+					[x, y] = [8,8];
+				console.log("left ", x, y);
+				break;
+			case 38:
+				x = selected[0] - 1 < 0 ? 8 : selected[0] - 1;
+				y = selected[1];
+				console.log("up", x, y)
+				break;
+			case 39:
+				x = selected[1] + 1 > 8 ? selected[0] + 1 : selected[0];
+				y = selected[1] + 1 > 8 ? 0 : selected[1] + 1;
+				if (selected[0] === 8 && selected[1] === 8) 
+					[x, y] = [0,0];
+				console.log("right", x, y)
+				break;
+			case 40:
+				x = selected[0] + 1 > 8 ? 0 : selected[0] + 1;
+				y = selected[1];
+				console.log("down", x, y)
+				break;
+			default:
+				break;
 		}
-		else if (key > 36 && key < 41){
-			switch(key) {
-				case 37:
-					let x1 = selected[1] - 1 < 0 ? selected[0] - 1 : selected[0];
-					let y1 = selected[1] - 1 < 0 ? 8 : selected[1] - 1;
-					if (selected[0] === 0 && selected[1] === 0) 
-						[x1, y1] = [8,8];
-					setSelected([x1, y1]);
-					break;
-				case 38:
-					const x2 = selected[0] - 1 < 0 ? 8 : selected[0] - 1;
-					const y2 = selected[1];
-					setSelected([x2, y2]);
-					break;
-				case 39:
-					let x3 = selected[1] + 1 > 8 ? selected[0] + 1 : selected[0];
-					let y3 = selected[1] + 1 > 8 ? 0 : selected[1] + 1;
-					if (selected[0] === 8 && selected[1] === 8) 
-						[x3, y3] = [0,0];
-					setSelected([x3, y3]);
-					break;
-				case 40:
-					const x4 = selected[0] + 1 > 8 ? 0 : selected[0] + 1;
-					const y4 = selected[1];
-					setSelected([x4, y4]);
-					break;
-				default:
-					setSelected([null, null]);
-			}
-		}
+		select(x, y);
 	}
-
-	const countdown = () => setTimer(s => s - 1);
-
-
-	useEffect(() => {
-		if (lives === 0){
-			setTable(solvedBoard);
-			setGameCompleted(true);
-			setSelected([null, null]);
-			setTimer(10);
-			setInterval(countdown, 1000);
-		}
-	}, [lives, solvedBoard])
 
 	useEffect(() => {
 		const [ques, ans] = createRandomBoard();
@@ -128,29 +97,36 @@ export default function() {
 		localStorage.setItem("theme", theme ? "dark" : "");
 	}, [theme])
 
-	window.onkeydown = handleKeyPress;
+	useEffect(() => {
+		if (!!table.length && !table[selected[0]][selected[1]])
+			setPossibilities(getAllPossibilities(table, selected));
+		else
+			setPossibilities([]);
+	}, [table, selected])
+
+	useEffect(() => {
+		if (!!table.length && !find(table))
+			setGameCompleted(true);
+	}, [table])
+
+	window.onkeydown = (e) => handleKeyPress(e);
 
 	const newGame = () => window.location.reload();
 
-	if (timer === 0){
-		clearInterval(countdown);
-		newGame();
+	const setNumber = number => {
+		const newTable = table.map(e => [...e]);
+		if (solvedBoard[selected[0]][selected[1]] === number)
+			newTable[selected[0]][selected[1]] = number;
+		else 
+			setAlertMessage(true);
+		
+		setTable(newTable);
 	}
 
-	const handleInput = e => {
-		const number = +e.target.value;
-		if (number > 0 && number < 10){
-			const newTable = table.map(e => [...e]);
-			if (solvedBoard[selected[0]][selected[1]] === number){
-				newTable[selected[0]][selected[1]] = number;
-				setMobileInput(number);
-			}
-			else
-				setLives(l => l - 1);
-			
-			setTable(newTable);
-		}
-		setMobileInput(null);
+	const handleClose = (e,reason) => {
+		if (reason === "clickaway")
+			return;
+		setAlertMessage(false);
 	}
 
 	return (
@@ -174,28 +150,36 @@ export default function() {
 						<Typography variant="h6" component="p">
 							{
 								gameCompleted ?
-								"GAME OVER" : "Lives :"
+								"GAME OVER" : 
+									!!possibilities.length ? 
+									"Possibilities :" :
+									null
 							}
 						</Typography>
-						<div className="ml-5">
-							{
-								[...Array(lives >= 0 ? lives : 0)].map(e => 
-									<FavoriteIcon style={theme} className="lives" />
-								)
-							}
-						</div>
 					</div>
-					<div className="d-flex dir-c mt-5">
+					<div className="d-flex">
+						{
+							!gameCompleted &&
+							possibilities.map((possibility, index) => 
+								<button 
+									onClick={() => setNumber(possibility)}
+									className="table-item"
+									style={tableItem}
+								>
+									{possibility || null}
+								</button>
+							)
+						}
+					</div>
+					<div className="d-flex mt-5">
 					{
 						gameCompleted ? 
-						<Fragment>
-							<p>
-								{`starting new game in ${timer} seconds`}
-							</p>
-							<p onClick={newGame} className="instant-link">
-								start now
-							</p>
-						</Fragment>
+						<Button variant="contained" style={{
+							backgroundColor: !darkTheme ? "black" : "white",
+							color: !darkTheme ? "white" : "black",
+						}} onClick={newGame}>
+							New Game
+						</Button>
 						: null
 					}
 					</div>
@@ -210,18 +194,33 @@ export default function() {
 						<Brightness3Icon style={theme} />
 					}
 				</IconButton>
+				{
+					<Snackbar 
+						open={alertMessage} 
+						autoHideDuration={1000} 
+						onClose={handleClose}
+					>
+						<Alert 
+							elevation={6} 
+							variant="filled" 
+							onClose={handleClose} 
+							severity="error" 
+						>
+							Wrong Answer
+						</Alert>
+					</Snackbar>
+				}
 			</Grid>
 			<Grid item xs={12} md={6}>
 				<div className="table-container">
 					{
 						table.map((row, i) => 
-							<Fragment>
+							<Fragment key={i}>
 							<div className="table-row">
 								{
 									row.map((item, j) => 
-										<Fragment>
+										<Fragment key={j}>
 										<button 
-											type="text"
 											onClick={() => select(i,j)}
 											className="table-item"
 											style={
@@ -259,14 +258,6 @@ export default function() {
 						)
 					}
 				</div>
-				<input 
-					id="mobileInput"
-					autoFocus 
-					type="text" 
-					value={mobileInput} 
-					onChange={handleInput} 
-					className="hidden-input" 
-				/>
 			</Grid>
 		</Grid>
 	)

@@ -5,9 +5,11 @@ body {
 }
 .sudoku {
   font-size: 4.6rem;
+  margin-bottom: 0;
 }
 .sub-title {
   font-size: 1.25rem;
+  margin-top: 0;
 }
 .full-screen {
   width: 100vw;

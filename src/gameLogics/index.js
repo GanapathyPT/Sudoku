@@ -4,7 +4,7 @@ const randomNumber = (min, max) =>
 
 
 //finds next zero in the board 
-function find(board)  {
+export function find(board)  {
 	for(let i=0; i<9; i++){
 		for(let j=0; j<9; j++){
 			if(board[i][j] === 0){
@@ -116,4 +116,16 @@ export function createRandomBoard()  {
 	if(!solve(board))
 		return createRandomBoard();
 	return [question, board];
+}
+
+export const getAllPossibilities = (board, pos) => {
+	const possibilities = [];
+
+	for (let num=0; num<10; num++){
+		if (isValid(board, num, pos)){
+			possibilities.push(num);
+		}
+	}
+
+	return possibilities;
 }
