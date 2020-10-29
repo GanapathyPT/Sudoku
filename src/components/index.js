@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment } from "react";
 
 import {
 	Grid,
@@ -6,15 +6,19 @@ import {
 	Typography,
 	IconButton,
 	Snackbar,
-	Button
+	Button,
 } from "@material-ui/core";
 
 import Alert from "@material-ui/lab/Alert";
 
-import WbSunnyIcon from '@material-ui/icons/WbSunny';
-import Brightness3Icon from '@material-ui/icons/Brightness3';
+import WbSunnyIcon from "@material-ui/icons/WbSunny";
+import Brightness3Icon from "@material-ui/icons/Brightness3";
 
-import { createRandomBoard, getAllPossibilities, find } from "../gameLogics";
+import { 
+	createRandomBoard, 
+	getAllPossibilities, 
+	find,
+} from "../gameLogics";
 
 export default function() {
 
@@ -26,6 +30,7 @@ export default function() {
 	const [darkTheme, setDarkTheme] = useState(false);
 	const [alertMessage, setAlertMessage] = useState(false);
 
+	// changing the color when dark mode is switched
 	const theme = {
 		backgroundColor: darkTheme ? "black" : "white",
 		color: darkTheme ? "white" : "black",
@@ -47,57 +52,84 @@ export default function() {
 		backgroundColor: darkTheme ? "#666" : "lightgrey",
 	}
 
+	// set the selected element when not game is completed
 	const select = (i, j) => {
 		console.log("selected ", i ,j )
 		if (!gameCompleted)
 			setSelected([i, j]);
 	}
 
-	const handleKeyPress = e => {
+	const moveSelected = ({ keyCode }) => {
+
+		const key = +keyCode;
+
+		// handling the number event when the key is pressed
+		if ((key > 96 && key < 106) || (key > 48 && key < 58)){
+			// checking whether the selected is not filled 
+			if (!table[selected[0]][selected[1]]){
+				// getting the number from both numpad and keyboard
+				const number = key > 96 && key < 106 ? key - 96 : key - 48;
+				// checking only there is something selected
+				if (selected[0] !== null && selected[1] !== null){
+					// cloning the old table
+					const newTable = table.map(e => [...e]);
+					// checking for the pressed number is right
+					if (solvedBoard[selected[0]][selected[1]] === number)
+						newTable[selected[0]][selected[1]] = number;
+					else
+						setAlertMessage(true);
+
+					setTable(newTable);
+				}
+			}
+		}
+
+
+		// moving the selected element on arrow key press
 		let x,y;
-		switch(e.keyCode) {
-			case 37:
+		switch(keyCode) {
+			case 37: // left
 				x = selected[1] - 1 < 0 ? selected[0] - 1 : selected[0];
 				y = selected[1] - 1 < 0 ? 8 : selected[1] - 1;
 				if (selected[0] === 0 && selected[1] === 0) 
 					[x, y] = [8,8];
-				console.log("left ", x, y);
 				break;
-			case 38:
+			case 38: // up
 				x = selected[0] - 1 < 0 ? 8 : selected[0] - 1;
 				y = selected[1];
-				console.log("up", x, y)
 				break;
-			case 39:
+			case 39: // right
 				x = selected[1] + 1 > 8 ? selected[0] + 1 : selected[0];
 				y = selected[1] + 1 > 8 ? 0 : selected[1] + 1;
 				if (selected[0] === 8 && selected[1] === 8) 
 					[x, y] = [0,0];
-				console.log("right", x, y)
 				break;
-			case 40:
+			case 40: // down
 				x = selected[0] + 1 > 8 ? 0 : selected[0] + 1;
 				y = selected[1];
-				console.log("down", x, y)
 				break;
 			default:
-				break;
+				return;
 		}
 		select(x, y);
 	}
 
 	useEffect(() => {
+		// creating the board and getting also the answer
 		const [ques, ans] = createRandomBoard();
 		setTable(ques);
 		setSolvedBoard(ans);
+		// getting the dark mode from localStorage
 		setDarkTheme(!!localStorage.getItem("theme"));
 	}, [])
 
 	useEffect(() => {
+		// setting the darkMode to localStorage when changed
 		localStorage.setItem("theme", theme ? "dark" : "");
 	}, [theme])
 
 	useEffect(() => {
+		// setting the possibilities only if the selected element has zero value
 		if (!!table.length && !table[selected[0]][selected[1]])
 			setPossibilities(getAllPossibilities(table, selected));
 		else
@@ -105,14 +137,15 @@ export default function() {
 	}, [table, selected])
 
 	useEffect(() => {
+		// game is completed if there is no zero in table
 		if (!!table.length && !find(table))
 			setGameCompleted(true);
 	}, [table])
 
-	window.onkeydown = (e) => handleKeyPress(e);
-
+	// reloading the tab for crating new game
 	const newGame = () => window.location.reload();
 
+	// setting the number when the possibility item is clicked
 	const setNumber = number => {
 		const newTable = table.map(e => [...e]);
 		if (solvedBoard[selected[0]][selected[1]] === number)
@@ -123,14 +156,23 @@ export default function() {
 		setTable(newTable);
 	}
 
+	// closing the alert message 
 	const handleClose = (e,reason) => {
 		if (reason === "clickaway")
 			return;
 		setAlertMessage(false);
 	}
 
+	// getting the screen and focussing it on every render
+	const GAME = document.getElementById("game");
+	if (!!GAME)
+		GAME.focus();
+
 	return (
 		<Grid 
+			id="game" 
+			onKeyDown={moveSelected} 
+			tabIndex="0"
 			style={theme} 
 			container 
 			justify="center" 
@@ -212,7 +254,10 @@ export default function() {
 				}
 			</Grid>
 			<Grid item xs={12} md={6}>
-				<div className="table-container">
+				<div 
+					className="table-container" 
+					
+				>
 					{
 						table.map((row, i) => 
 							<Fragment key={i}>

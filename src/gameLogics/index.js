@@ -1,4 +1,4 @@
-
+// getting a random number from min and max
 const randomNumber = (min, max) => 
 	Math.floor((Math.random() * (max - min + 1)) + min);
 
@@ -21,18 +21,6 @@ function isValid(board, num, pos)  {
 	// check the row for the number
 	if (board[pos[0]].includes(num))
 		return false;
-
-	/**
-	|--------------------------------------------------
-	| my old method to check whether the number is in the row
-	|--------------------------------------------------
-		for(let i=0; i<9; i++){
-			if (board[pos[0]][i] === num){
-				//number already exists in row
-				return false;
-			}
-		}
-	*/
 
 	//check the column for the number
 	for(let i=0; i<9; i++){
@@ -118,11 +106,14 @@ export function createRandomBoard()  {
 	return [question, board];
 }
 
+// to get all the valid numbers for a given position
 export const getAllPossibilities = (board, pos) => {
 	const possibilities = [];
 
-	for (let num=0; num<10; num++){
+	// looping from 1 to 9 and checking validity
+	for (let num=1; num<10; num++){
 		if (isValid(board, num, pos)){
+			// if valid adding it to array
 			possibilities.push(num);
 		}
 	}
