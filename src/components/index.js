@@ -42,33 +42,36 @@ export default function() {
 
 	const moveSelected = ({ keyCode }) => {
 
+		if (gameCompleted){
+			newGame();				
+			return;
+		}
+
 		const key = +keyCode;
 
 		// handling the number event when the key is pressed
 		if ((key > 96 && key < 106) || (key > 48 && key < 58)){
-			// checking whether the selected is not filled 
-			if (!table[selected[0]][selected[1]]){
-				// getting the number from both numpad and keyboard
-				const number = key > 96 && key < 106 ? key - 96 : key - 48;
-				// checking only there is something selected
-				if (selected[0] !== null && selected[1] !== null){
-					// cloning the old table
-					const newTable = table.map(e => [...e]);
-					// checking for the pressed number is right
-					if (solvedBoard[selected[0]][selected[1]] === number)
-						newTable[selected[0]][selected[1]] = number;
-					else
-						setAlertMessage(true);
+			// getting the number from both numpad and keyboard
+			const number = key > 96 && key < 106 ? key - 96 : key - 48;
+			// cloning the old table
+			const newTable = table.map(e => [...e]);
+			// checking for the pressed number is right
+			if (solvedBoard[selected[0]][selected[1]] === number)
+				newTable[selected[0]][selected[1]] = number;
+			else
+				setAlertMessage(true);
 
-					setTable(newTable);
-				}
-			}
+			setTable(newTable);
+			return;
 		}
 
 
 		// moving the selected element on arrow key press
 		let x,y;
 		switch(keyCode) {
+			case 32:
+				setTable(solvedBoard);
+				return;
 			case 37: // left
 				x = selected[1] - 1 < 0 ? selected[0] - 1 : selected[0];
 				y = selected[1] - 1 < 0 ? 8 : selected[1] - 1;
@@ -185,10 +188,14 @@ export default function() {
 					<div className="d-flex mt-5">
 					{
 						gameCompleted ? 
-						<Button variant="contained" style={{
-							backgroundColor: !darkTheme ? "black" : "white",
-							color: !darkTheme ? "white" : "black",
-						}} onClick={newGame}>
+						<Button 
+							variant="contained" 
+							style={{
+								backgroundColor: darkTheme ? "white" : "black",
+								color: darkTheme ? "black" : "white",
+							}} 
+							onClick={newGame}
+						>
 							New Game
 						</Button>
 						: null
