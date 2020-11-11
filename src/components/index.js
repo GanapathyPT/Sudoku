@@ -125,8 +125,8 @@ export default function() {
 
 	useEffect(() => {
 		// setting the darkMode to localStorage when changed
-		localStorage.setItem("theme", theme ? "dark" : "");
-	}, [theme])
+		localStorage.setItem("theme", darkTheme ? "dark" : "");
+	}, [darkTheme])
 
 	useEffect(() => {
 		// setting the possibilities only if the selected element has zero value
