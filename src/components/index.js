@@ -1,18 +1,16 @@
-import React, { useState, useEffect, Fragment } from "react";
+import React, { useState, useEffect } from "react";
 
 import {
 	Grid,
 	Divider,
 	Typography,
-	IconButton,
-	Snackbar,
 	Button,
 } from "@material-ui/core";
 
-import Alert from "@material-ui/lab/Alert";
-
-import WbSunnyIcon from "@material-ui/icons/WbSunny";
-import Brightness3Icon from "@material-ui/icons/Brightness3";
+import Table from "./Table";
+import Cell from "./Cell";
+import ErrorAlert from "./ErrorAlert";
+import ThemeChanger from "./ThemeChanger";
 
 import { 
 	createRandomBoard, 
@@ -36,25 +34,8 @@ export default function() {
 		color: darkTheme ? "white" : "black",
 	};
 
-	const themeSwitcher = {
-		position: "fixed",
-		top: 5,
-		right: 5
-	};
-
-	const tableItem = {
-		backgroundColor: darkTheme ? "#292929" : "#f6f6f6",
-		borderColor: darkTheme ? "#545454" : "#e2e2e2",
-		color: darkTheme ? "white" : "black",
-	};
-
-	const selectedStyle = {
-		backgroundColor: darkTheme ? "#666" : "lightgrey",
-	}
-
 	// set the selected element when not game is completed
 	const select = (i, j) => {
-		console.log("selected ", i ,j )
 		if (!gameCompleted)
 			setSelected([i, j]);
 	}
@@ -134,13 +115,10 @@ export default function() {
 			setPossibilities(getAllPossibilities(table, selected));
 		else
 			setPossibilities([]);
-	}, [table, selected])
-
-	useEffect(() => {
 		// game is completed if there is no zero in table
 		if (!!table.length && !find(table))
 			setGameCompleted(true);
-	}, [table])
+	}, [table, selected])
 
 	// reloading the tab for crating new game
 	const newGame = () => window.location.reload();
@@ -154,13 +132,6 @@ export default function() {
 			setAlertMessage(true);
 		
 		setTable(newTable);
-	}
-
-	// closing the alert message 
-	const handleClose = (e,reason) => {
-		if (reason === "clickaway")
-			return;
-		setAlertMessage(false);
 	}
 
 	// getting the screen and focussing it on every render
@@ -203,13 +174,11 @@ export default function() {
 						{
 							!gameCompleted &&
 							possibilities.map((possibility, index) => 
-								<button 
-									onClick={() => setNumber(possibility)}
-									className="table-item"
-									style={tableItem}
-								>
-									{possibility || null}
-								</button>
+								<Cell {...{
+									item: possibility,
+									darkTheme,
+									onClick: () => setNumber(possibility),
+								}} />
 							)
 						}
 					</div>
@@ -226,83 +195,23 @@ export default function() {
 					}
 					</div>
 				</div>
-				<IconButton 
-					style={themeSwitcher} 
-					onClick={() => setDarkTheme(!darkTheme)}
-				>
-					{
-						darkTheme ?
-						<WbSunnyIcon style={theme} /> :
-						<Brightness3Icon style={theme} />
-					}
-				</IconButton>
-				{
-					<Snackbar 
-						open={alertMessage} 
-						autoHideDuration={1000} 
-						onClose={handleClose}
-					>
-						<Alert 
-							elevation={6} 
-							variant="filled" 
-							onClose={handleClose} 
-							severity="error" 
-						>
-							Wrong Answer
-						</Alert>
-					</Snackbar>
-				}
+				<ThemeChanger {...{
+					theme,
+					darkTheme,
+					setDarkTheme,
+				}} />
+				<ErrorAlert {...{
+					alertMessage,
+					setAlertMessage,
+				}} />
 			</Grid>
 			<Grid item xs={12} md={6}>
-				<div 
-					className="table-container" 
-					
-				>
-					{
-						table.map((row, i) => 
-							<Fragment key={i}>
-							<div className="table-row">
-								{
-									row.map((item, j) => 
-										<Fragment key={j}>
-										<button 
-											onClick={() => select(i,j)}
-											className="table-item"
-											style={
-												!gameCompleted &&
-												i === selected[0] &&
-												j === selected[1] ?
-												{...tableItem, ...selectedStyle} :
-												tableItem
-											}
-										>
-											{item || null}
-										</button>
-										{
-											j === 2 || j === 5 ?
-											<Divider style={{
-												width:5,
-												backgroundColor: darkTheme ?
-												 "black" : "white" 
-											}} /> : null
-										}
-										</Fragment>
-									)
-								}
-							</div>
-							{
-								i === 2 || i === 5 ?
-								<Divider style={
-									{ 
-										height:5,
-										backgroundColor: darkTheme ? "black" : "white" 
-									}
-								} /> : null
-							}
-							</Fragment>
-						)
-					}
-				</div>
+				<Table {...{
+					table,
+					darkTheme,
+					selected,
+					select
+				}}/>
 			</Grid>
 		</Grid>
 	)
