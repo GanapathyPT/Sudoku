@@ -226,6 +226,7 @@ const useSudoku = () => {
 			setSelectedCell(board[x][y]);
 
 			// handling number entering events
+			let wrongInput = false;
 			if (code.includes("Digit")) {
 				// if selected is a question or the game is over no need to handle number click
 				if (selectedCell.question || gameOver) return;
@@ -242,8 +243,12 @@ const useSudoku = () => {
 					},
 					num
 				);
+				wrongInput =
+					!boardCopy[selectedCell.row][selectedCell.col].valid;
 				boardCopy[selectedCell.row][selectedCell.col].content = num;
 				setBoard(boardCopy);
+
+				if (wrongInput) navigator.vibrate(100);
 				return;
 			}
 		};
