@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 const THEME = "THEME";
 
 const useTheme = () => {
-	const [darkMode, setDarkMode] = useState<boolean>(false);
+	const [darkMode, setDarkMode] = useState<boolean>();
 
 	useEffect(() => {
 		const darkMode = localStorage.getItem(THEME);
@@ -11,6 +11,8 @@ const useTheme = () => {
 	}, []);
 
 	useEffect(() => {
+		if (darkMode === undefined) return;
+
 		if (darkMode) localStorage.setItem(THEME, THEME);
 		else localStorage.removeItem(THEME);
 

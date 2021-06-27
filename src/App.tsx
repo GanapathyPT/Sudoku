@@ -8,12 +8,6 @@ import { MobileInput } from "./components/MobileInput";
 import { useSudoku } from "./logic/sudoku-logic";
 import { useTheme } from "./logic/theme-logic";
 
-const newGameButtonStyle: CSSProperties = {
-	backgroundColor: "#000",
-	color: "#fff",
-	marginTop: 20,
-};
-
 const App = () => {
 	const {
 		board,
@@ -26,10 +20,6 @@ const App = () => {
 	} = useSudoku();
 	const { darkMode, onThemeChange } = useTheme();
 
-	const theme: CSSProperties = {
-		backgroundColor: darkMode ? "#000" : "#fff",
-		color: darkMode ? "#fff" : "#000",
-	};
 	const inverseTheme: CSSProperties = {
 		backgroundColor: darkMode ? "#fff" : "#000",
 		color: darkMode ? "#000" : "#fff",
@@ -43,18 +33,15 @@ const App = () => {
 			className="full-screen"
 		>
 			<Grid item xs={12} md={6}>
-				<h1 style={theme} className="sudoku">
-					SUDOKU
-				</h1>
-				<p style={theme} className="sub-title">
-					game for puzzle lovers
-				</p>
-				{gameOver ? null : (
-					<MobileInput onMobileOptionClick={onMobileOptionClick} />
-				)}
+				<h1 className="title">SUDOKU</h1>
+				<p className="sub-title">game for puzzle lovers</p>
+				<MobileInput
+					onMobileOptionClick={onMobileOptionClick}
+					gameOver={gameOver}
+				/>
 				<Button
 					variant="contained"
-					style={{ ...newGameButtonStyle, ...inverseTheme }}
+					style={{ marginTop: 20, ...inverseTheme }}
 					onClick={gameOver ? newGame : resetGame}
 				>
 					{gameOver ? "New Game" : "Reset Game"}

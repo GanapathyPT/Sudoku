@@ -5,7 +5,7 @@ import Brightness3Icon from "@material-ui/icons/Brightness3";
 import { CSSProperties } from "@material-ui/core/styles/withStyles";
 
 interface Props {
-	theme: boolean;
+	theme?: boolean;
 	onThemeChange: () => void;
 }
 

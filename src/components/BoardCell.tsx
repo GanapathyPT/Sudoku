@@ -1,7 +1,6 @@
 import React, { memo } from "react";
 import { Divider } from "@material-ui/core";
 import { Cell } from "../logic/sudoku-logic";
-
 interface Props {
 	cell: Cell;
 	isSelected?: boolean;
@@ -17,6 +16,7 @@ const BoardCell = memo(({ cell, isSelected, onClick }: Props) => (
 			className={`table-item ${isSelected ? "selected" : ""} ${
 				cell.valid ? "" : "error"
 			} ${cell.question ? "bold" : ""}`}
+			style={{ animationDelay: Math.floor(Math.random() * 500) + "ms" }}
 		>
 			{cell.content === 0 ? null : cell.content}
 		</button>

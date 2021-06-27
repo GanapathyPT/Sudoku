@@ -9,28 +9,22 @@ body {
 	margin: 0;
 	background-color: var(--bg-color);
 }
-.sudoku {
+.title {
 	font-size: 4.6rem;
 	margin-bottom: 0;
+	color: var(--text-color);
+	background-color: var(--bg-color);
 }
 .sub-title {
 	font-size: 1.25rem;
 	margin-top: 0;
+	color: var(--text-color);
+	background-color: var(--bg-color);
 }
 .full-screen {
 	width: 100vw;
 	height: 100vh;
 	text-align: center;
-}
-.lives {
-	margin-right: 20px;
-	animation: 1s ease 2s infinite normal none running lives;
-}
-.ml-5 {
-	margin-left: 50px;
-}
-.lives-container {
-	margin-top: 50px;
 }
 .table-container {
 	width: 80%;
@@ -43,100 +37,37 @@ body {
 	width: 60px;
 	height: 60px;
 	margin: 1px;
-	border-collapse: separate;
 	border: 1px solid var(--grid-border-color);
 	font-size: 1.2rem;
 	cursor: pointer;
 	background-color: var(--grid-color);
 	color: var(--text-color);
-}
-.d-flex {
-	display: flex;
-	width: 100%;
-	justify-content: center;
-	align-items: center;
-}
-.dir-c {
-	flex-direction: column;
-}
-.mt-5 {
-	margin-top: 50px;
-}
-.instant-link {
-	font-size: 14px;
-	text-decoration: underline;
-	color: inherit;
-	cursor: pointer;
-}
-.instant-link:hover {
-	color: purple;
-}
-.hidden-input {
-	visibility: hidden;
-}
-.attribution {
-	position: fixed;
-	bottom: 0;
-	left: 50%;
-	transform: translateX(-50%);
-	font-size: 12px;
+	opacity: 0;
+	animation: fade-in forwards 0.3s;
 }
 .selected {
 	transition: background 0.1s;
-	background-color: #bbb;
+	background-color: var(--grid-border-color);
 }
 .error {
 	color: #f00;
 }
 .bold {
 	font-weight: bolder;
-	font-size: 1.4rem;
+	font-size: 1.6rem;
 }
 .mobile-input {
 	display: none;
 	margin-top: 20px;
 }
 
-@keyframes lives {
-	0% {
-		transform: scale(1);
-	}
-	12% {
-		transform: scale(1.25);
-	}
-	25% {
-		transform: scale(1.5);
-	}
-	38% {
-		transform: scale(1.75);
-	}
-	50% {
-		transform: scale(2);
-	}
-	62% {
-		transform: scale(1.75);
-	}
-	75% {
-		transform: scale(1.5);
-	}
-	88% {
-		transform: scale(1.25);
-	}
-	100% {
-		transform: scale(1);
-	}
-}
-
 @media (max-width: 600px) {
-	.sudoku {
+	.title {
 		font-size: 1.6rem;
 	}
 	.sub-title {
 		margin-top: 0;
 		font-size: 1rem;
-	}
-	.lives-container {
-		margin-top: 0;
 	}
 	.table-container {
 		width: 100%;
@@ -144,16 +75,16 @@ body {
 	.table-item {
 		height: 40px;
 	}
-	.hidden-input {
-		visibility: visible;
-	}
-	.mt-5 {
-		margin-top: 0;
-	}
-	.attribution {
-		font-size: 8px;
-	}
 	.mobile-input {
 		display: block;
+	}
+}
+
+@keyframes fade-in {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
 	}
 }
