@@ -192,7 +192,8 @@ const useSudoku = () => {
 			if (selectedCell === undefined) return;
 
 			// handling arrow key moves
-			let x: number, y: number;
+			let x: number = selectedCell.row;
+			let y: number = selectedCell.col;
 			switch (code) {
 				case "ArrowLeft":
 					x =
@@ -221,7 +222,7 @@ const useSudoku = () => {
 					y = selectedCell.col;
 					break;
 				default:
-					return;
+					break;
 			}
 			setSelectedCell(board[x][y]);
 
@@ -249,7 +250,6 @@ const useSudoku = () => {
 				setBoard(boardCopy);
 
 				if (wrongInput) navigator.vibrate(100);
-				return;
 			}
 		};
 		window.addEventListener("keydown", mouseDownListener);
