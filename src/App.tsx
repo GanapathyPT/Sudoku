@@ -1,6 +1,6 @@
 import "./App.css";
 import React from "react";
-import { Grid, Button } from "@material-ui/core";
+import { Grid, Button, CircularProgress } from "@material-ui/core";
 import { CSSProperties } from "@material-ui/core/styles/withStyles";
 import { ThemeChanger } from "./components/ThemeChanger";
 import { GameBoard } from "./components/Board";
@@ -13,6 +13,7 @@ const App = () => {
 		board,
 		selectedCell,
 		gameOver,
+		boardLoading,
 		resetGame,
 		newGame,
 		onCellClick,
@@ -49,11 +50,17 @@ const App = () => {
 				<ThemeChanger theme={darkMode} onThemeChange={onThemeChange} />
 			</Grid>
 			<Grid item xs={12} md={6}>
-				<GameBoard
-					board={board}
-					onCellClick={onCellClick}
-					selectedCell={selectedCell}
-				/>
+				{boardLoading ? (
+					<CircularProgress
+						style={{ color: inverseTheme.backgroundColor }}
+					/>
+				) : (
+					<GameBoard
+						board={board}
+						onCellClick={onCellClick}
+						selectedCell={selectedCell}
+					/>
+				)}
 			</Grid>
 		</Grid>
 	);

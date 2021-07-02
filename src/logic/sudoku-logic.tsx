@@ -1,14 +1,5 @@
 import { useCallback } from "react";
 import { useEffect, useState } from "react";
-
-/**
- * get a random number in the given range
- * @param min -> starting range (inclusive)
- * @param max -> ending range (inclusive)
- */
-const getRandomNumber = (min: number, max: number): number =>
-	Math.floor(Math.random() * (max - min + 1) + min);
-
 export interface Cell {
 	row: number;
 	col: number;
@@ -22,6 +13,10 @@ interface Position {
 	x: number;
 	y: number;
 }
+
+// utility function
+const copy = (board: Board): Board =>
+	board.map((row) => row.map((cell) => ({ ...cell })));
 
 /**
  * get the next zero occurence of a board
@@ -85,45 +80,6 @@ const solveBoard = (gameBoard: Board): boolean => {
 
 	return false;
 };
-/**
- * create a completely random board
- */
-const createRandomBoard = (): Board => {
-	const initialBoard: Board = new Array(9).fill(0).map((_, i) =>
-		new Array(9).fill(0).map((_, j) => ({
-			row: i,
-			col: j,
-			content: 0,
-			valid: false,
-			question: false,
-		}))
-	);
-
-	// no of initially filled cells
-	let count = getRandomNumber(15, 25);
-
-	while (count > 0) {
-		const position: Position = {
-			x: getRandomNumber(0, 8),
-			y: getRandomNumber(0, 8),
-		};
-		const num = getRandomNumber(1, 9);
-
-		if (isValid(initialBoard, position, num)) {
-			initialBoard[position.x][position.y].content = num;
-			initialBoard[position.x][position.y].question = true;
-			initialBoard[position.x][position.y].valid = true;
-			count--;
-		}
-	}
-
-	const boardCopy = initialBoard.map((row) =>
-		row.map((cell) => ({ ...cell }))
-	);
-	if (solveBoard(boardCopy)) return initialBoard;
-
-	return createRandomBoard();
-};
 
 // cache the intial state of board to reset the board
 let boardCache: Board | undefined;
@@ -141,30 +97,93 @@ const useSudoku = () => {
 	const [board, setBoard] = useState<Board>([]);
 	const [selectedCell, setSelectedCell] = useState<Cell>();
 	const [gameOver, setGameOver] = useState<boolean>(false);
+	const [boardLoading, setBoardLoading] = useState(true);
 
-	// fetch the initial board only for first time
-	useEffect(() => {
-		// if there is a cache using it else creating new one
-		let newBoard = boardCache;
-		if (newBoard !== undefined) setBoard(newBoard);
-		else newBoard = createRandomBoard();
+	const placeNumber = useCallback(
+		(num: number) => {
+			if (selectedCell === undefined) return;
+			const boardCopy = copy(board);
+			if (boardCopy[selectedCell.row][selectedCell.col].content === num)
+				return;
 
-		// setting the board and caching it
-		setBoard(newBoard);
-		boardCache = newBoard;
+			boardCopy[selectedCell.row][selectedCell.col].valid = isValid(
+				boardCopy,
+				{
+					x: selectedCell.row,
+					y: selectedCell.col,
+				},
+				num
+			);
+			boardCopy[selectedCell.row][selectedCell.col].content = num;
+			// if wrong ans is pressed vibrate the device if possible (mobile)
+			if (!boardCopy[selectedCell.row][selectedCell.col].valid)
+				navigator.vibrate(200);
+			setBoard(boardCopy);
+		},
+		[board, selectedCell, setBoard]
+	);
 
-		// post message to worker to create a new board
-		// if new board is received caching it
+	const newGame = useCallback(() => {
+		if (!gameOver) return;
+
+		// checking if nextBoard is there
+		// if yes using it else wait
+		if (nextBoard === undefined) return setBoardLoading(true);
+		else setBoardLoading(false);
+
+		setBoard(nextBoard);
+		setSelectedCell(undefined);
+		setGameOver(false);
+		boardCache = copy(nextBoard);
+		nextBoard = undefined;
+
+		// posting message to worker to start creating a new board
 		worker.postMessage("START");
-		worker.onmessage = (event) => {
-			const { cmd, content }: { cmd: string; content: Board } =
-				event.data;
-			if (cmd === "BOARD") nextBoard = content;
-		};
-	}, []);
+	}, [gameOver, setBoard, setSelectedCell, setGameOver, setBoardLoading]);
+
+	const onCellClick = useCallback(
+		(cell: Cell) => {
+			setSelectedCell(cell);
+		},
+		[setSelectedCell]
+	);
+
+	const onMobileOptionClick = useCallback(
+		(cell: Cell) => {
+			if (selectedCell === undefined || gameOver) return;
+			placeNumber(cell.content);
+		},
+		[selectedCell, gameOver, placeNumber]
+	);
+
+	const resetGame = useCallback(() => {
+		if (boardCache !== undefined) setBoard(boardCache);
+	}, [setBoard]);
 
 	// when board changes check if game is over
 	useEffect(() => {
+		// intial game creation
+		if (board.length === 0) {
+			worker.postMessage("START");
+			setBoardLoading(false);
+		}
+
+		worker.onmessage = (event) => {
+			const { cmd, content }: { cmd: string; content: Board } =
+				event.data;
+			if (cmd === "BOARD") {
+				if (board.length === 0) {
+					setBoard(content);
+					boardCache = copy(content);
+					worker.postMessage("START");
+				} else {
+					nextBoard = content;
+					if (boardLoading) newGame();
+				}
+			}
+		};
+
+		// check if game is completed
 		if (
 			board.length !== 0 &&
 			board.every((row) =>
@@ -173,18 +192,18 @@ const useSudoku = () => {
 			getNextZero(board) === undefined
 		)
 			setGameOver(true);
-	}, [board]);
+	}, [board, boardLoading, newGame]);
 
 	useEffect(() => {
 		const mouseDownListener = ({ code }: KeyboardEvent) => {
 			// cheat code to solve the game :)
-			if (code === "Space") {
-				const boardCopy = board.map((row) =>
-					row.map((cell) => ({ ...cell }))
-				);
+			if (code === "Space" && boardCache !== undefined && !gameOver) {
+				const boardCopy = copy(boardCache);
 				solveBoard(boardCopy);
 				setBoard(boardCopy);
 				setGameOver(true);
+
+				boardCache = undefined;
 				return;
 			}
 
@@ -227,87 +246,23 @@ const useSudoku = () => {
 			setSelectedCell(board[x][y]);
 
 			// handling number entering events
-			let wrongInput = false;
 			if (code.includes("Digit")) {
 				// if selected is a question or the game is over no need to handle number click
 				if (selectedCell.question || gameOver) return;
 
-				const boardCopy = board.map((row) =>
-					row.map((cell) => ({ ...cell }))
-				);
 				const num = parseInt(code[code.length - 1]);
-				boardCopy[selectedCell.row][selectedCell.col].valid = isValid(
-					boardCopy,
-					{
-						x: selectedCell.row,
-						y: selectedCell.col,
-					},
-					num
-				);
-				wrongInput =
-					!boardCopy[selectedCell.row][selectedCell.col].valid;
-				boardCopy[selectedCell.row][selectedCell.col].content = num;
-				setBoard(boardCopy);
-
-				if (wrongInput) navigator.vibrate(100);
+				placeNumber(num);
 			}
 		};
 		window.addEventListener("keydown", mouseDownListener);
 		return () => window.removeEventListener("keydown", mouseDownListener);
-	}, [board, selectedCell, gameOver]);
-
-	const onCellClick = useCallback(
-		(cell: Cell) => {
-			setSelectedCell(cell);
-		},
-		[setSelectedCell]
-	);
-
-	const onMobileOptionClick = useCallback(
-		(cell: Cell) => {
-			if (selectedCell === undefined || gameOver) return;
-
-			const boardCopy = board.map((row) =>
-				row.map((cell_) => ({ ...cell_ }))
-			);
-			boardCopy[selectedCell.row][selectedCell.col].valid = isValid(
-				boardCopy,
-				{
-					x: selectedCell.row,
-					y: selectedCell.col,
-				},
-				cell.content
-			);
-			boardCopy[selectedCell.row][selectedCell.col].content =
-				cell.content;
-			setBoard(boardCopy);
-		},
-		[board, selectedCell, gameOver, setBoard]
-	);
-
-	const newGame = useCallback(async () => {
-		// checking if nextBoard is there
-		// if yes using it else creating new
-		let newBoard = nextBoard;
-		if (newBoard === undefined) newBoard = createRandomBoard();
-		setBoard(newBoard);
-		setSelectedCell(undefined);
-		setGameOver(false);
-		boardCache = nextBoard;
-		nextBoard = undefined;
-
-		// posting message to worker to start creating a new board
-		worker.postMessage("START");
-	}, [setBoard, setSelectedCell, setGameOver]);
-
-	const resetGame = useCallback(() => {
-		if (boardCache) setBoard(boardCache);
-	}, [setBoard]);
+	}, [board, selectedCell, gameOver, placeNumber]);
 
 	return {
 		board,
 		selectedCell,
 		gameOver,
+		boardLoading,
 		newGame,
 		resetGame,
 		onCellClick,
