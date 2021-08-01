@@ -1,5 +1,25 @@
 import { useCallback } from "react";
 import { useEffect, useState } from "react";
+import sudokuWorker from "../sudoku.worker";
+
+interface Position {
+	x: number;
+	y: number;
+}
+
+enum WorkerPostType {
+	CREATE_BOARD = 0,
+}
+
+enum WorkerOutputType {
+	BOARD = 0,
+}
+interface BoardOutput {
+	type: WorkerOutputType.BOARD;
+	payload: Board;
+}
+type WorkerOutput = BoardOutput;
+
 export interface Cell {
 	row: number;
 	col: number;
@@ -8,11 +28,6 @@ export interface Cell {
 	question: boolean;
 }
 export type Board = Cell[][];
-
-interface Position {
-	x: number;
-	y: number;
-}
 
 // utility function
 const copy = (board: Board): Board =>
@@ -35,14 +50,13 @@ const getNextZero = (gameBoard: Board) => {
  * @param position -> position to check
  * @param num -> number to put at that position
  */
-const isValid = (
+export const isValid = (
 	gameBoard: Board,
 	position: Position,
 	num: number
 ): boolean => {
 	// checking in rows
-	if (gameBoard[position.x].some((cell) => cell.content === num))
-		return false;
+	if (gameBoard[position.x].some((cell) => cell.content === num)) return false;
 
 	// checking in columns
 	for (let i = 0; i < 9; i++)
@@ -63,7 +77,7 @@ const isValid = (
  * solve the given SUDOKU board
  * @param gameBoard -> board to solve
  */
-const solveBoard = (gameBoard: Board): boolean => {
+export const solveBoard = (gameBoard: Board): boolean => {
 	const position = getNextZero(gameBoard);
 
 	if (position === undefined) return true;
@@ -88,7 +102,7 @@ let boardCache: Board | undefined;
 // 		-- reason not using a state for this
 let nextBoard: Board | undefined;
 // worker instance
-const worker = new Worker("/worker.js");
+const worker: Worker = new sudokuWorker();
 
 /**
  * SUDOKU game logic custom hook
@@ -103,8 +117,7 @@ const useSudoku = () => {
 		(num: number) => {
 			if (selectedCell === undefined) return;
 			const boardCopy = copy(board);
-			if (boardCopy[selectedCell.row][selectedCell.col].content === num)
-				return;
+			if (boardCopy[selectedCell.row][selectedCell.col].content === num) return;
 
 			boardCopy[selectedCell.row][selectedCell.col].valid = isValid(
 				boardCopy,
@@ -138,7 +151,7 @@ const useSudoku = () => {
 		nextBoard = undefined;
 
 		// posting message to worker to start creating a new board
-		worker.postMessage("START");
+		worker.postMessage(WorkerPostType.CREATE_BOARD);
 	}, [gameOver, setBoard, setSelectedCell, setGameOver, setBoardLoading]);
 
 	const onCellClick = useCallback(
@@ -164,21 +177,22 @@ const useSudoku = () => {
 	useEffect(() => {
 		// intial game creation
 		if (board.length === 0) {
-			worker.postMessage("START");
+			worker.postMessage(WorkerPostType.CREATE_BOARD);
 			setBoardLoading(false);
 		}
 
 		worker.onmessage = (event) => {
-			const { cmd, content }: { cmd: string; content: Board } =
-				event.data;
-			if (cmd === "BOARD") {
-				if (board.length === 0) {
-					setBoard(content);
-					boardCache = copy(content);
-					worker.postMessage("START");
-				} else {
-					nextBoard = content;
-					if (boardLoading) newGame();
+			const { type, payload }: WorkerOutput = event.data;
+			switch (type) {
+				case WorkerOutputType.BOARD: {
+					if (board.length === 0) {
+						setBoard(payload);
+						boardCache = copy(payload);
+						worker.postMessage(WorkerPostType.CREATE_BOARD);
+					} else {
+						nextBoard = payload;
+						if (boardLoading) newGame();
+					}
 				}
 			}
 		};
@@ -216,12 +230,9 @@ const useSudoku = () => {
 			switch (code) {
 				case "ArrowLeft":
 					x =
-						selectedCell.col - 1 < 0
-							? selectedCell.row - 1
-							: selectedCell.row;
+						selectedCell.col - 1 < 0 ? selectedCell.row - 1 : selectedCell.row;
 					y = selectedCell.col - 1 < 0 ? 8 : selectedCell.col - 1;
-					if (selectedCell.row === 0 && selectedCell.col === 0)
-						[x, y] = [8, 8];
+					if (selectedCell.row === 0 && selectedCell.col === 0) [x, y] = [8, 8];
 					break;
 				case "ArrowUp":
 					x = selectedCell.row - 1 < 0 ? 8 : selectedCell.row - 1;
@@ -229,12 +240,9 @@ const useSudoku = () => {
 					break;
 				case "ArrowRight":
 					x =
-						selectedCell.col + 1 > 8
-							? selectedCell.row + 1
-							: selectedCell.row;
+						selectedCell.col + 1 > 8 ? selectedCell.row + 1 : selectedCell.row;
 					y = selectedCell.col + 1 > 8 ? 0 : selectedCell.col + 1;
-					if (selectedCell.row === 8 && selectedCell.col === 8)
-						[x, y] = [0, 0];
+					if (selectedCell.row === 8 && selectedCell.col === 8) [x, y] = [0, 0];
 					break;
 				case "ArrowDown":
 					x = selectedCell.row + 1 > 8 ? 0 : selectedCell.row + 1;

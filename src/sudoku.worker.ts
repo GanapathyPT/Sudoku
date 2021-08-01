@@ -1,20 +1,45 @@
-// TODO: Find a way to use ts in workr file
-// TODO: don't repeat the functions to create a board
+declare const self: Worker;
+export default {} as typeof Worker & { new (): Worker };
 
-const getRandomNumber = (min, max) =>
+interface Position {
+	x: number;
+	y: number;
+}
+
+enum WorkerInputType {
+	CREATE_BOARD = 0,
+}
+
+enum WorkerOutputType {
+	BOARD = 0,
+}
+
+interface Cell {
+	row: number;
+	col: number;
+	content: number;
+	valid: boolean;
+	question: boolean;
+}
+type Board = Cell[][];
+
+// utility function
+const getRandomNumber = (min: number, max: number) =>
 	Math.floor(Math.random() * (max - min + 1) + min);
 
-const getNextZero = (gameBoard) => {
-	for (let x = 0; x < 9; x++)
-		for (let y = 0; y < 9; y++)
-			// if it is zeros
-			if (gameBoard[x][y].content === 0) return { x, y };
-};
-
-const isValid = (gameBoard, position, num) => {
+/**
+ * check if a number is valid to put in a position
+ * @param gameBoard -> board to check
+ * @param position -> position to check
+ * @param num -> number to put at that position
+ */
+export const isValid = (
+	gameBoard: Board,
+	position: Position,
+	num: number
+): boolean => {
 	// checking in rows
-	if (gameBoard[position.x].some((cell) => cell.content === num))
-		return false;
+	if (gameBoard[position.x].some((cell) => cell.content === num)) return false;
 
 	// checking in columns
 	for (let i = 0; i < 9; i++)
@@ -31,7 +56,22 @@ const isValid = (gameBoard, position, num) => {
 	return true;
 };
 
-const solveBoard = (gameBoard) => {
+/**
+ * get the next zero occurence of a board
+ * @param gameBoard -> board to find the next zero
+ */
+const getNextZero = (gameBoard: Board) => {
+	for (let x = 0; x < 9; x++)
+		for (let y = 0; y < 9; y++)
+			// if it is zeros
+			if (gameBoard[x][y].content === 0) return { x, y };
+};
+
+/**
+ * solve the given SUDOKU board
+ * @param gameBoard -> board to solve
+ */
+const solveBoard = (gameBoard: Board): boolean => {
 	const position = getNextZero(gameBoard);
 
 	if (position === undefined) return true;
@@ -49,7 +89,10 @@ const solveBoard = (gameBoard) => {
 	return false;
 };
 
-const createRandomBoard = () => {
+/**
+ * create a new random board
+ */
+const createRandomBoard = (): Board => {
 	const initialBoard = new Array(9).fill(0).map((_, i) =>
 		new Array(9).fill(0).map((_, j) => ({
 			row: i,
@@ -78,9 +121,7 @@ const createRandomBoard = () => {
 		}
 	}
 
-	const boardCopy = initialBoard.map((row) =>
-		row.map((cell) => ({ ...cell }))
-	);
+	const boardCopy = initialBoard.map((row) => row.map((cell) => ({ ...cell })));
 	if (solveBoard(boardCopy)) return initialBoard;
 
 	return createRandomBoard();
@@ -88,12 +129,14 @@ const createRandomBoard = () => {
 
 // event handler when main thread post message
 self.addEventListener("message", (event) => {
-	const cmd = event.data;
-	if (cmd === "START") {
-		const board = createRandomBoard();
-		postMessage({
-			cmd: "BOARD",
-			content: board,
-		});
+	const cmd: WorkerInputType = event.data;
+	switch (cmd) {
+		case WorkerInputType.CREATE_BOARD: {
+			const board = createRandomBoard();
+			self.postMessage({
+				type: WorkerOutputType.BOARD,
+				payload: board,
+			});
+		}
 	}
 });
