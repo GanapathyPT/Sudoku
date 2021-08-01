@@ -1,12 +1,12 @@
 import "./App.css";
 import React from "react";
 import { Grid, Button, CircularProgress } from "@material-ui/core";
-import { CSSProperties } from "@material-ui/core/styles/withStyles";
 import { ThemeChanger } from "./components/ThemeChanger";
 import { GameBoard } from "./components/Board";
 import { MobileInput } from "./components/MobileInput";
 import { useSudoku } from "./logic/sudoku-logic";
 import { useTheme } from "./logic/theme-logic";
+import { Header } from "./components/Header";
 
 const App = () => {
 	const {
@@ -19,12 +19,7 @@ const App = () => {
 		onCellClick,
 		onMobileOptionClick,
 	} = useSudoku();
-	const { darkMode, onThemeChange } = useTheme();
-
-	const inverseTheme: CSSProperties = {
-		backgroundColor: darkMode ? "#fff" : "#000",
-		color: darkMode ? "#000" : "#fff",
-	};
+	const { darkMode, inverseTheme, onThemeChange } = useTheme();
 
 	return (
 		<Grid
@@ -34,8 +29,7 @@ const App = () => {
 			className="full-screen"
 		>
 			<Grid item xs={12} md={6}>
-				<h1 className="title">SUDOKU</h1>
-				<p className="sub-title">game for puzzle lovers</p>
+				<Header title="SUDOKU" subTitle="game for puzzle lovers" />
 				<MobileInput
 					onMobileOptionClick={onMobileOptionClick}
 					gameOver={gameOver}
@@ -51,9 +45,7 @@ const App = () => {
 			</Grid>
 			<Grid item xs={12} md={6}>
 				{boardLoading ? (
-					<CircularProgress
-						style={{ color: inverseTheme.backgroundColor }}
-					/>
+					<CircularProgress style={{ color: inverseTheme.backgroundColor }} />
 				) : (
 					<GameBoard
 						board={board}

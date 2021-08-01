@@ -1,6 +1,7 @@
 import React, { memo } from "react";
 import { Divider } from "@material-ui/core";
 import { Cell } from "../logic/sudoku-logic";
+
 interface Props {
 	cell: Cell;
 	isSelected?: boolean;
@@ -20,9 +21,7 @@ const BoardCell = memo(({ cell, isSelected, onClick }: Props) => (
 		>
 			{cell.content === 0 ? null : cell.content}
 		</button>
-		{cell.col === 2 || cell.col === 5 ? (
-			<Divider style={dividerStyle} />
-		) : null}
+		{cell.col === 2 || cell.col === 5 ? <Divider style={dividerStyle} /> : null}
 	</>
 ));
 

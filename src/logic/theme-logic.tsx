@@ -38,8 +38,14 @@ const useTheme = () => {
 		setDarkMode((oldState) => !oldState);
 	}, [setDarkMode]);
 
+	const inverseTheme = {
+		backgroundColor: darkMode ? "#fff" : "#000",
+		color: darkMode ? "#000" : "#fff",
+	};
+
 	return {
 		darkMode,
+		inverseTheme,
 		onThemeChange,
 	};
 };
