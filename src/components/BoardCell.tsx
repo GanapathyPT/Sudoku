@@ -18,6 +18,7 @@ const BoardCell = memo(({ cell, isSelected, onClick }: Props) => (
 				cell.valid ? "" : "error"
 			} ${cell.question ? "bold" : ""}`}
 			style={{ animationDelay: Math.floor(Math.random() * 500) + "ms" }}
+			data-testid="cell"
 		>
 			{cell.content === 0 ? null : cell.content}
 		</button>
