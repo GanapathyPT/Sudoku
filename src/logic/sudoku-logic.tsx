@@ -44,6 +44,12 @@ const getNextZero = (gameBoard: Board) => {
 			if (gameBoard[x][y].content === 0) return { x, y };
 };
 
+const getBoxStartValues = (position: Position) => {
+	const x = Math.floor(position.x / 3) * 3;
+	const y = Math.floor(position.y / 3) * 3;
+	return { x, y };
+};
+
 /**
  * check if a number is valid to put in a position
  * @param gameBoard -> board to check
@@ -63,9 +69,7 @@ export const isValid = (
 		if (gameBoard[i][position.y].content === num) return false;
 
 	// check in the box
-	const x = Math.floor(position.x / 3) * 3;
-	const y = Math.floor(position.y / 3) * 3;
-
+	const { x, y } = getBoxStartValues(position);
 	for (let i = x; i < x + 3; i++)
 		for (let j = y; j < y + 3; j++)
 			if (gameBoard[i][j].content === num) return false;
@@ -113,27 +117,85 @@ const useSudoku = () => {
 	const [gameOver, setGameOver] = useState<boolean>(false);
 	const [boardLoading, setBoardLoading] = useState(true);
 
+	const updateValidityStatus = useCallback(
+		(position: Position, updatingBoard: Board) => {
+			const boardCopy = copy(updatingBoard);
+			const positions = new Set<Position>();
+
+			// update rows
+			boardCopy[position.x].forEach((cell) => {
+				if (cell.content !== 0 && !cell.question)
+					positions.add({
+						x: cell.row,
+						y: cell.col,
+					});
+			});
+
+			// update columns
+			for (let i = 0; i < 9; i++) {
+				const cell = boardCopy[i][position.y];
+				if (cell.content !== 0 && !cell.question)
+					positions.add({
+						x: cell.row,
+						y: cell.col,
+					});
+			}
+
+			// update box
+			const { x, y } = getBoxStartValues(position);
+			for (let i = x; i < x + 3; i++) {
+				for (let j = y; j < y + 3; j++) {
+					const cell = boardCopy[i][j];
+					if (cell.content !== 0 && !cell.question)
+						positions.add({
+							x: cell.row,
+							y: cell.col,
+						});
+				}
+			}
+			positions.forEach((position) => {
+				const cellContent = boardCopy[position.x][position.y].content;
+				// removing the number temporarily to validate the number
+				// isValid function consider the number in the given position
+				// so remove the number to make sure validation works (hacky fix for now)
+				const tempContentStorage = boardCopy[position.x][position.y].content;
+				boardCopy[position.x][position.y].content = 0;
+				boardCopy[position.x][position.y].valid = isValid(
+					boardCopy,
+					position,
+					cellContent
+				);
+				// adding back the content after validation check
+				boardCopy[position.x][position.y].content = tempContentStorage;
+			});
+			return boardCopy;
+		},
+		[]
+	);
+
 	const placeNumber = useCallback(
 		(num: number) => {
 			if (selectedCell === undefined) return;
 			const boardCopy = copy(board);
 			if (boardCopy[selectedCell.row][selectedCell.col].content === num) return;
 
+			const position: Position = {
+				x: selectedCell.row,
+				y: selectedCell.col,
+			};
 			boardCopy[selectedCell.row][selectedCell.col].valid = isValid(
 				boardCopy,
-				{
-					x: selectedCell.row,
-					y: selectedCell.col,
-				},
+				position,
 				num
 			);
 			boardCopy[selectedCell.row][selectedCell.col].content = num;
+			const validityUpdatedBoard = updateValidityStatus(position, boardCopy);
 			// if wrong ans is pressed vibrate the device if possible (mobile)
-			if (!boardCopy[selectedCell.row][selectedCell.col].valid)
+			if (!validityUpdatedBoard[selectedCell.row][selectedCell.col].valid)
 				navigator.vibrate(200);
-			setBoard(boardCopy);
+			setBoard(validityUpdatedBoard);
 		},
-		[board, selectedCell, setBoard]
+		[board, selectedCell, setBoard, updateValidityStatus]
 	);
 
 	const newGame = useCallback(() => {
