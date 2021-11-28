@@ -7,6 +7,7 @@ import { MobileInput } from "./components/MobileInput";
 import { useSudoku } from "./logic/sudoku-logic";
 import { useTheme } from "./logic/theme-logic";
 import { Header } from "./components/Header";
+import { Crackers } from "./components/Crackers";
 
 const App = () => {
 	const {
@@ -29,6 +30,7 @@ const App = () => {
 			className="full-screen"
 		>
 			<Grid item xs={12} md={6}>
+				<Crackers gameOver={gameOver} />
 				<Header title="SUDOKU" subTitle="game for puzzle lovers" />
 				<MobileInput
 					onMobileOptionClick={onMobileOptionClick}
