@@ -77,6 +77,9 @@ export const isValid = (
 	return true;
 };
 
+// storing the steps involved in solving the game
+const solvingSteps: { position: Position; content: number }[] = [];
+
 /**
  * solve the given SUDOKU board
  * @param gameBoard -> board to solve
@@ -88,11 +91,21 @@ export const solveBoard = (gameBoard: Board): boolean => {
 
 	for (let num = 1; num < 10; num++) {
 		if (isValid(gameBoard, position, num)) {
+			solvingSteps.push({
+				position,
+				content: num,
+			});
 			gameBoard[position.x][position.y].content = num;
 			gameBoard[position.x][position.y].valid = true;
 
 			if (solveBoard(gameBoard)) return true;
-			else gameBoard[position.x][position.y].content = 0;
+			else {
+				solvingSteps.push({
+					position,
+					content: 0,
+				});
+				gameBoard[position.x][position.y].content = 0;
+			}
 		}
 	}
 
@@ -115,7 +128,39 @@ const useSudoku = () => {
 	const [board, setBoard] = useState<Board>([]);
 	const [selectedCell, setSelectedCell] = useState<Cell>();
 	const [gameOver, setGameOver] = useState<boolean>(false);
+	const [boardDisabled, setBoardDisabled] = useState(false);
 	const [boardLoading, setBoardLoading] = useState(true);
+
+	const visualizeSolving = useCallback(() => {
+		if (boardCache === undefined || gameOver) return;
+		setBoardDisabled(true);
+		solvingSteps.length = 0;
+		const solvedBoard = copy(boardCache);
+		solveBoard(solvedBoard);
+
+		let i = 0;
+		solvingSteps.forEach(({ content, position }, index) => {
+			i += 10;
+			setTimeout(() => {
+				setBoard((oldBoard) => {
+					const boardCopy = copy(oldBoard);
+					boardCopy[position.x][position.y] = {
+						...boardCopy[position.x][position.y],
+						valid: true,
+						content,
+					};
+					return boardCopy;
+				});
+				if (index === solvingSteps.length - 1) {
+					setGameOver(true);
+					setBoardDisabled(false);
+				}
+			}, i);
+		});
+
+		boardCache = undefined;
+		worker.postMessage(WorkerPostType.CREATE_BOARD);
+	}, [gameOver, setBoard, setBoardDisabled]);
 
 	const updateValidityStatus = useCallback(
 		(position: Position, updatingBoard: Board) => {
@@ -218,9 +263,10 @@ const useSudoku = () => {
 
 	const onCellClick = useCallback(
 		(cell: Cell) => {
+			if (boardDisabled) return;
 			setSelectedCell(cell);
 		},
-		[setSelectedCell]
+		[setSelectedCell, boardDisabled]
 	);
 
 	const onMobileOptionClick = useCallback(
@@ -272,19 +318,8 @@ const useSudoku = () => {
 
 	useEffect(() => {
 		const mouseDownListener = ({ code }: KeyboardEvent) => {
-			// cheat code to solve the game :)
-			if (code === "Space" && boardCache !== undefined && !gameOver) {
-				const boardCopy = copy(boardCache);
-				solveBoard(boardCopy);
-				setBoard(boardCopy);
-				setGameOver(true);
-
-				boardCache = undefined;
-				return;
-			}
-
-			// if nothing is selected do nothing
-			if (selectedCell === undefined) return;
+			// if nothing is selected or board is visualizing (disabled) do nothing
+			if (selectedCell === undefined || boardDisabled) return;
 
 			// handling arrow key moves
 			let x: number = selectedCell.row;
@@ -326,17 +361,19 @@ const useSudoku = () => {
 		};
 		window.addEventListener("keydown", mouseDownListener);
 		return () => window.removeEventListener("keydown", mouseDownListener);
-	}, [board, selectedCell, gameOver, placeNumber]);
+	}, [board, selectedCell, gameOver, boardDisabled, placeNumber]);
 
 	return {
 		board,
 		selectedCell,
 		gameOver,
 		boardLoading,
+		boardDisabled,
 		newGame,
 		resetGame,
 		onCellClick,
 		onMobileOptionClick,
+		visualizeSolving,
 	};
 };
 

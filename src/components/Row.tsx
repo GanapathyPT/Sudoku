@@ -7,26 +7,26 @@ interface Props {
 	row: Cell[];
 	rowIndex: number;
 	selectedCell?: Cell;
+	disabled?: boolean;
 	onCellClick: (cell: Cell) => void;
 }
 
 const dividerStyle = { height: 5, backgroundColor: "transparent" };
 
-const Row = ({ row, rowIndex, selectedCell, onCellClick }: Props) => (
+const Row = ({ row, rowIndex, selectedCell, disabled, onCellClick }: Props) => (
 	<>
 		<div className="table-row">
 			{row.map((cell) => (
 				<BoardCell
 					key={`${cell.row}_${cell.col}`}
 					cell={cell}
+					disabled={disabled}
 					isSelected={selectedCell === cell}
 					onClick={onCellClick}
 				/>
 			))}
 		</div>
-		{rowIndex === 2 || rowIndex === 5 ? (
-			<Divider style={dividerStyle} />
-		) : null}
+		{rowIndex === 2 || rowIndex === 5 ? <Divider style={dividerStyle} /> : null}
 	</>
 );
 
