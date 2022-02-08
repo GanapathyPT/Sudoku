@@ -49,7 +49,7 @@ const App = () => {
 					</Button>
 
 					<Button
-						disabled={boardLoading || boardDisabled}
+						disabled={boardLoading || boardDisabled || gameOver}
 						variant="contained"
 						style={{ marginLeft: 10, ...normalTheme }}
 						onClick={visualizeSolving}

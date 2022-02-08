@@ -318,14 +318,8 @@ const useSudoku = () => {
 
 	useEffect(() => {
 		const mouseDownListener = ({ code }: KeyboardEvent) => {
-			// cheat code to solve the game :)
-			if (code === "Space" && boardCache !== undefined && !gameOver) {
-				visualizeSolving();
-				return;
-			}
-
-			// if nothing is selected do nothing
-			if (selectedCell === undefined) return;
+			// if nothing is selected or board is visualizing (disabled) do nothing
+			if (selectedCell === undefined || boardDisabled) return;
 
 			// handling arrow key moves
 			let x: number = selectedCell.row;
@@ -367,7 +361,7 @@ const useSudoku = () => {
 		};
 		window.addEventListener("keydown", mouseDownListener);
 		return () => window.removeEventListener("keydown", mouseDownListener);
-	}, [board, selectedCell, gameOver, placeNumber]);
+	}, [board, selectedCell, gameOver, boardDisabled, placeNumber]);
 
 	return {
 		board,
