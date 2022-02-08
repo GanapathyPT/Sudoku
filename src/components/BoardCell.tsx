@@ -13,6 +13,7 @@ const dividerStyle = { width: 5, backgroundColor: "transparent" };
 
 const BoardCell = memo(({ cell, isSelected, disabled, onClick }: Props) => (
 	<>
+		{console.log("render")}
 		<button
 			onClick={() => onClick(cell)}
 			className={`table-item ${isSelected ? "selected" : ""} ${

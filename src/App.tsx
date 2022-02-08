@@ -40,6 +40,7 @@ const App = () => {
 				/>
 				<div style={{ marginTop: 20 }}>
 					<Button
+						disabled={boardLoading || boardDisabled}
 						variant="contained"
 						style={{ ...inverseTheme }}
 						onClick={gameOver ? newGame : resetGame}
@@ -48,6 +49,7 @@ const App = () => {
 					</Button>
 
 					<Button
+						disabled={boardLoading || boardDisabled}
 						variant="contained"
 						style={{ marginLeft: 10, ...normalTheme }}
 						onClick={visualizeSolving}

@@ -44,7 +44,7 @@ const useTheme = () => {
 	};
 
 	const normalTheme = {
-		backgroundColor: darkMode ? "#111" : "#fff",
+		backgroundColor: darkMode ? "#111" : "#eee",
 		color: darkMode ? "#fff" : "#000",
 	};
 
