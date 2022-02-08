@@ -43,9 +43,15 @@ const useTheme = () => {
 		color: darkMode ? "#000" : "#fff",
 	};
 
+	const normalTheme = {
+		backgroundColor: darkMode ? "#111" : "#fff",
+		color: darkMode ? "#fff" : "#000",
+	};
+
 	return {
 		darkMode,
 		inverseTheme,
+		normalTheme,
 		onThemeChange,
 	};
 };

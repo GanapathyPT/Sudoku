@@ -77,6 +77,9 @@ export const isValid = (
 	return true;
 };
 
+// storing the steps involved in solving the game
+const solvingSteps: { position: Position; content: number }[] = [];
+
 /**
  * solve the given SUDOKU board
  * @param gameBoard -> board to solve
@@ -88,11 +91,21 @@ export const solveBoard = (gameBoard: Board): boolean => {
 
 	for (let num = 1; num < 10; num++) {
 		if (isValid(gameBoard, position, num)) {
+			solvingSteps.push({
+				position,
+				content: num,
+			});
 			gameBoard[position.x][position.y].content = num;
 			gameBoard[position.x][position.y].valid = true;
 
 			if (solveBoard(gameBoard)) return true;
-			else gameBoard[position.x][position.y].content = 0;
+			else {
+				solvingSteps.push({
+					position,
+					content: 0,
+				});
+				gameBoard[position.x][position.y].content = 0;
+			}
 		}
 	}
 
@@ -116,6 +129,34 @@ const useSudoku = () => {
 	const [selectedCell, setSelectedCell] = useState<Cell>();
 	const [gameOver, setGameOver] = useState<boolean>(false);
 	const [boardLoading, setBoardLoading] = useState(true);
+
+	const visualizeSolving = () => {
+		if (boardCache === undefined) return;
+
+		solvingSteps.length = 0;
+		const solvedBoard = copy(boardCache);
+		solveBoard(solvedBoard);
+
+		let i = 0;
+		solvingSteps.forEach(({ content, position }, index) => {
+			i += 100;
+			setTimeout(() => {
+				setBoard((oldBoard) => {
+					const boardCopy = copy(oldBoard);
+					boardCopy[position.x][position.y] = {
+						...boardCopy[position.x][position.y],
+						valid: true,
+						content,
+					};
+					return boardCopy;
+				});
+				if (index === solvingSteps.length - 1) setGameOver(true);
+			}, i);
+		});
+
+		boardCache = undefined;
+		worker.postMessage(WorkerPostType.CREATE_BOARD);
+	};
 
 	const updateValidityStatus = useCallback(
 		(position: Position, updatingBoard: Board) => {
@@ -337,6 +378,7 @@ const useSudoku = () => {
 		resetGame,
 		onCellClick,
 		onMobileOptionClick,
+		visualizeSolving,
 	};
 };
 
