@@ -15,6 +15,7 @@ const App = () => {
 		selectedCell,
 		gameOver,
 		boardLoading,
+		boardDisabled,
 		resetGame,
 		newGame,
 		onCellClick,
@@ -62,6 +63,7 @@ const App = () => {
 				) : (
 					<GameBoard
 						board={board}
+						disabled={boardDisabled}
 						onCellClick={onCellClick}
 						selectedCell={selectedCell}
 					/>

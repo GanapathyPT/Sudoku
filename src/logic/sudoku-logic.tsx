@@ -128,18 +128,19 @@ const useSudoku = () => {
 	const [board, setBoard] = useState<Board>([]);
 	const [selectedCell, setSelectedCell] = useState<Cell>();
 	const [gameOver, setGameOver] = useState<boolean>(false);
+	const [boardDisabled, setBoardDisabled] = useState(false);
 	const [boardLoading, setBoardLoading] = useState(true);
 
-	const visualizeSolving = () => {
-		if (boardCache === undefined) return;
-
+	const visualizeSolving = useCallback(() => {
+		if (boardCache === undefined || gameOver) return;
+		setBoardDisabled(true);
 		solvingSteps.length = 0;
 		const solvedBoard = copy(boardCache);
 		solveBoard(solvedBoard);
 
 		let i = 0;
 		solvingSteps.forEach(({ content, position }, index) => {
-			i += 100;
+			i += 10;
 			setTimeout(() => {
 				setBoard((oldBoard) => {
 					const boardCopy = copy(oldBoard);
@@ -150,13 +151,16 @@ const useSudoku = () => {
 					};
 					return boardCopy;
 				});
-				if (index === solvingSteps.length - 1) setGameOver(true);
+				if (index === solvingSteps.length - 1) {
+					setGameOver(true);
+					setBoardDisabled(false);
+				}
 			}, i);
 		});
 
 		boardCache = undefined;
 		worker.postMessage(WorkerPostType.CREATE_BOARD);
-	};
+	}, [gameOver, setBoard, setBoardDisabled]);
 
 	const updateValidityStatus = useCallback(
 		(position: Position, updatingBoard: Board) => {
@@ -259,9 +263,10 @@ const useSudoku = () => {
 
 	const onCellClick = useCallback(
 		(cell: Cell) => {
+			if (boardDisabled) return;
 			setSelectedCell(cell);
 		},
-		[setSelectedCell]
+		[setSelectedCell, boardDisabled]
 	);
 
 	const onMobileOptionClick = useCallback(
@@ -315,12 +320,7 @@ const useSudoku = () => {
 		const mouseDownListener = ({ code }: KeyboardEvent) => {
 			// cheat code to solve the game :)
 			if (code === "Space" && boardCache !== undefined && !gameOver) {
-				const boardCopy = copy(boardCache);
-				solveBoard(boardCopy);
-				setBoard(boardCopy);
-				setGameOver(true);
-
-				boardCache = undefined;
+				visualizeSolving();
 				return;
 			}
 
@@ -374,6 +374,7 @@ const useSudoku = () => {
 		selectedCell,
 		gameOver,
 		boardLoading,
+		boardDisabled,
 		newGame,
 		resetGame,
 		onCellClick,
