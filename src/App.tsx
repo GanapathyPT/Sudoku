@@ -15,12 +15,14 @@ const App = () => {
 		selectedCell,
 		gameOver,
 		boardLoading,
+		boardDisabled,
 		resetGame,
 		newGame,
 		onCellClick,
 		onMobileOptionClick,
+		visualizeSolving,
 	} = useSudoku();
-	const { darkMode, inverseTheme, onThemeChange } = useTheme();
+	const { darkMode, inverseTheme, normalTheme, onThemeChange } = useTheme();
 
 	return (
 		<Grid
@@ -36,13 +38,25 @@ const App = () => {
 					onMobileOptionClick={onMobileOptionClick}
 					gameOver={gameOver}
 				/>
-				<Button
-					variant="contained"
-					style={{ marginTop: 20, ...inverseTheme }}
-					onClick={gameOver ? newGame : resetGame}
-				>
-					{gameOver ? "New Game" : "Reset Game"}
-				</Button>
+				<div style={{ marginTop: 20 }}>
+					<Button
+						disabled={boardLoading || boardDisabled}
+						variant="contained"
+						style={{ ...inverseTheme }}
+						onClick={gameOver ? newGame : resetGame}
+					>
+						{gameOver ? "New Game" : "Reset Game"}
+					</Button>
+
+					<Button
+						disabled={boardLoading || boardDisabled || gameOver}
+						variant="contained"
+						style={{ marginLeft: 10, ...normalTheme }}
+						onClick={visualizeSolving}
+					>
+						Visualize
+					</Button>
+				</div>
 				<ThemeChanger theme={darkMode} onThemeChange={onThemeChange} />
 			</Grid>
 			<Grid item xs={12} md={6}>
@@ -51,6 +65,7 @@ const App = () => {
 				) : (
 					<GameBoard
 						board={board}
+						disabled={boardDisabled}
 						onCellClick={onCellClick}
 						selectedCell={selectedCell}
 					/>
